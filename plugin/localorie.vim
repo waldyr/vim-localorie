@@ -89,30 +89,21 @@ function! s:translations_for_key(fq_key) abort
     endfor
 
     if !miss
-      " if has_key(dict, 'line')
-        if has_key(dict, 'file')  " exact translation
+      if has_key(dict, 'file')  " exact translation
+        call add(results, {
+              \   'filename': dict.file,
+              \   'lnum':     dict.line,
+              \   'text':     '['.locale.'] '.dict.value
+              \ })
+      else  " pluralised model
+        for k in keys(dict)
           call add(results, {
-                \   'filename': dict.file,
-                \   'lnum':     dict.line,
-                \   'text':     '['.locale.'] '.dict.value
+                \   'filename': dict[k].file,
+                \   'lnum':     dict[k].line,
+                \   'text':     '['.locale.'] '.k.': '.dict[k].value
                 \ })
-        else  " pluralised model
-          for k in keys(dict)
-            call add(results, {
-                  \   'filename': dict[k].file,
-                  \   'lnum':     dict[k].line,
-                  \   'text':     '['.locale.'] '.k.': '.dict[k].value
-                  \ })
-          endfor
-        endif
-      " else
-        " " No line numbers available from ruby locale files.
-        " call add(results, {
-        "       \   'filename': dict.file,
-        "       \   'pattern':  dict.value,
-        "       \   'text':     '['.locale.'] '.dict.value
-        "       \ })
-      " endif
+        endfor
+      endif
     endif
   endfor
 
@@ -121,6 +112,7 @@ endfunction
 
 function! s:display(key, translations) abort
   let qf = s:options.quickfix
+  let sw = !s:options.switch
 
   if qf
     call setqflist(a:translations)
@@ -132,10 +124,13 @@ function! s:display(key, translations) abort
     execute (qf ? 'cclose' : 'lclose')
     redraw
     echo "No translations for '".a:key."'."
+  elseif len(a:translations) == 1
+    execute (qf ? 'cclose' : 'lclose')
+    execute ('edit +' . a:translations[0]['lnum'] . ' ' .a:translations[0]['filename'])
   else
     execute (qf ? 'copen' : 'lopen')
     let w:quickfix_title = a:key
-    if !s:options.switch
+    if sw
       wincmd p
     endif
   endif
