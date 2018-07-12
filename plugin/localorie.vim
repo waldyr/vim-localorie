@@ -54,7 +54,8 @@ function! localorie#expand_key() abort
   endwhile
 
   if !empty(parts)
-    echo join(reverse(parts), '.')
+    let @" = join(reverse(parts), '.')
+    echo @"
   endif
 endfunction
 
